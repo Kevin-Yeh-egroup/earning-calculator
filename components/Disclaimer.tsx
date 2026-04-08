@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card';
 const Disclaimer: React.FC = () => {
   return (
     <Card className="p-8 bg-muted/10 border-muted">
-      <h2 className="text-2xl font-bold text-foreground mb-4">💬 溫和提醒</h2>
+      <h2 className="text-2xl font-bold text-foreground mb-4">💬 溫馨提醒</h2>
       <div className="space-y-4 text-muted-foreground leading-relaxed">
         <p>
           這個工具是用固定條件幫你做估算。<br />

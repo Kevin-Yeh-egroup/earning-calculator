@@ -1,13 +1,10 @@
-import React, { useState, useMemo } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import ScenarioSelector from './ScenarioSelector';
 import InputForm from './InputForm';
 import ResultsDisplay from './ResultsDisplay';
 import ChartsSection from './ChartsSection';
 import AnnualTable from './AnnualTable';
-import ThinkingPrompts from './ThinkingPrompts';
 import Disclaimer from './Disclaimer';
 import { calculateCompound, calculateTargetPayment, type CalculationInputs, type CalculationResult } from '@/lib/calculator';
 
@@ -17,12 +14,11 @@ const Calculator: React.FC = () => {
   const [mode, setMode] = useState<Mode>('forward');
   const [inputs, setInputs] = useState<CalculationInputs>({
     initialAmount: 0,
-    monthlyPayment: 3000,
-    years: 5,
-    annualRate: 0.04,
-    paymentTiming: 'beginning',
-    compoundFrequency: 'monthly',
-    targetAmount: 500000,
+    monthlyPayment: 0,
+    years: 0,
+    annualRate: 0,
+    compoundFrequency: '',
+    targetAmount: 0,
   });
 
   const [calculated, setCalculated] = useState(false);
@@ -33,19 +29,32 @@ const Calculator: React.FC = () => {
   };
 
   const handleCalculate = () => {
+    const compoundFrequency = inputs.compoundFrequency;
+    if (!compoundFrequency) {
+      window.alert('請選擇「複利多久計算一次」。');
+      return;
+    }
+    if (!Number.isFinite(inputs.years) || inputs.years < 1 || inputs.years > 50) {
+      window.alert('請輸入「幾年後看到成果」，須為 1～50 的整數。');
+      return;
+    }
+    if (mode === 'backward' && (!inputs.targetAmount || inputs.targetAmount <= 0)) {
+      window.alert('請輸入「希望最後累積到多少錢」，須大於 0。');
+      return;
+    }
+
+    const payload: CalculationInputs = { ...inputs, compoundFrequency };
+
     if (mode === 'forward') {
-      const result = calculateCompound(inputs);
+      const result = calculateCompound(payload);
       setResults(result);
+      setInputs(result.inputs);
     } else {
-      const result = calculateTargetPayment(inputs);
+      const result = calculateTargetPayment(payload);
       setResults(result);
+      setInputs(result.inputs);
     }
     setCalculated(true);
-  };
-
-  const handleAdjustments = (adjustedInputs: CalculationInputs) => {
-    setInputs(adjustedInputs);
-    handleCalculate();
   };
 
   return (
@@ -74,7 +83,14 @@ const Calculator: React.FC = () => {
         </Card>
 
         {/* Scenario Selection */}
-        <ScenarioSelector mode={mode} onModeChange={setMode} />
+        <ScenarioSelector
+          mode={mode}
+          onModeChange={(next) => {
+            setMode(next);
+            setCalculated(false);
+            setResults(null);
+          }}
+        />
 
         {/* Input Form */}
         <InputForm
@@ -90,11 +106,6 @@ const Calculator: React.FC = () => {
             <ResultsDisplay mode={mode} results={results} />
             <ChartsSection results={results} />
             <AnnualTable results={results} />
-            <ThinkingPrompts
-              inputs={inputs}
-              results={results}
-              onAdjustment={handleAdjustments}
-            />
           </>
         )}
 
